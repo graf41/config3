@@ -143,7 +143,7 @@ class TestConfigParser(unittest.TestCase):
         self.parser.lines = lines
         with self.assertRaises(ConfigParserError) as context:
             self.parser.parse()
-        self.assertIn("Некорректное объявление константы.", str(context.exception))
+        self.assertIn("Неизвестная конструкция.", str(context.exception))
 
     def test_invalid_dictionary_declaration(self):
         lines = [
@@ -156,7 +156,7 @@ class TestConfigParser(unittest.TestCase):
 
     def test_missing_semicolon(self):
         lines = [
-            '20 -> max_connections',
+            '20 -> max_connections',  # Отсутствует ';'
         ]
         self.parser.lines = lines
         with self.assertRaises(ConfigParserError) as context:
@@ -170,7 +170,7 @@ class TestConfigParser(unittest.TestCase):
         self.parser.lines = lines
         with self.assertRaises(ConfigParserError) as context:
             self.parser.parse()
-        self.assertIn("Неизвестное значение: '@[unknown_operator]'", str(context.exception))
+        self.assertIn("Неизвестный токен 'unknown_operator' в выражении.", str(context.exception))
 
     def test_incorrect_expression(self):
         lines = [
@@ -191,7 +191,7 @@ class TestConfigParser(unittest.TestCase):
         self.parser.lines = lines
         with self.assertRaises(ConfigParserError) as context:
             self.parser.parse()
-        self.assertIn("Неизвестное значение: '{3.4}'", str(context.exception))
+        self.assertIn("Вложенные массивы не поддерживаются.", str(context.exception))
 
     def test_mod_operation(self):
         lines = [

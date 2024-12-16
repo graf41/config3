@@ -24,15 +24,17 @@ class ConfigParser:
             if not line or line.startswith('#'):  # Пропуск пустых строк и комментариев
                 self.line_num += 1
                 continue
-            if '->' in line and line.endswith(';'):  # Объявление константы
-                self._parse_constant_declaration(line)
+            if '->' in line:
+                if not line.endswith(';'):
+                    self._raise_error("Некорректное объявление константы.")
+                else:
+                    self._parse_constant_declaration(line)
             elif line.startswith('begin'):  # Начало словаря
                 dict_name, dict_content = self._parse_dictionary()
                 if dict_name in result:
                     self._raise_error(f"Дублирование имени словаря '{dict_name}'.")
                 result[dict_name] = dict_content
             else:
-                print(f"DEBUG: Неопознанная строка: '{line}'")  # Отладка
                 self._raise_error("Неизвестная конструкция.")
         return result
 
@@ -109,13 +111,43 @@ class ConfigParser:
     def _parse_array(self, array_str):
         if not array_str:
             return []
-        # Используем регулярное выражение для корректного разбора элементов массива
-        # Элементы могут быть строками в кавычках или числами
-        pattern = r'"[^"]*"|-?\d+(?:\.\d+)?'
-        elements = re.findall(pattern, array_str)
+        # Проверка на вложенные скобки
+        if self._has_nested_braces(array_str):
+            self._raise_error("Вложенные массивы не поддерживаются.")
+        # Разбиваем строку массива на элементы, разделённые точкой, игнорируя точки внутри кавычек
+        elements = self._split_array_elements(array_str)
         if not elements:
             self._raise_error("Некорректный синтаксис массива.")
-        return [self._parse_value(elem.strip()) for elem in elements]
+        # Парсим каждый элемент
+        parsed_elements = []
+        for elem in elements:
+            parsed_elements.append(self._parse_value(elem))
+        return parsed_elements
+
+    def _has_nested_braces(self, s):
+        # Проверяем наличие любых скобок '{' или '}' в строке массива
+        return '{' in s or '}' in s
+
+    def _split_array_elements(self, array_str):
+        elements = []
+        current = ''
+        in_quotes = False
+        i = 0
+        while i < len(array_str):
+            c = array_str[i]
+            if c == '"':
+                in_quotes = not in_quotes
+                current += c
+            elif c == '.' and not in_quotes:
+                if current:
+                    elements.append(current.strip())
+                    current = ''
+            else:
+                current += c
+            i +=1
+        if current:
+            elements.append(current.strip())
+        return elements
 
     def _evaluate_expression(self, expr_str):
         tokens = expr_str.split()
