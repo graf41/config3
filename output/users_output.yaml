@@ -1,0 +1,8 @@
+users:
+  default_user: admin
+  default_password: password123
+  session_timeout: 2.0
+  roles:
+    role1: admin
+    role2: editor
+    role3: viewer
